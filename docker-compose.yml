@@ -43,6 +43,10 @@ services:
     env_file:
       - .env
     environment:
+      # Explicitly map runtime variables from host .env so they are visible
+      TOKEN: ${TOKEN}
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      REGISTER_CODE: ${REGISTER_CODE}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
