@@ -18,4 +18,13 @@ TOKEN = os.getenv('TOKEN')
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN')
 DEFAULT_DB_URL = os.getenv('DEFAULT_DB_URL')
 TARGET_DB_URL = os.getenv('TARGET_DB_URL')
+
+# If TARGET_DB_URL is not provided, try to build it from postgres env vars
+if not TARGET_DB_URL:
+	pg_user = os.getenv('POSTGRES_USER') or os.getenv('POSTGRES_USER', 'postgres')
+	pg_password = os.getenv('POSTGRES_PASSWORD') or os.getenv('POSTGRES_PASSWORD', 'postgres')
+	pg_host = os.getenv('POSTGRES_HOST', '127.0.0.1')
+	pg_port = os.getenv('POSTGRES_PORT', '5432')
+	pg_db = os.getenv('POSTGRES_DB', 'kislorod')
+	TARGET_DB_URL = f"postgresql+asyncpg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}"
 REGISTER_CODE = os.getenv('REGISTER_CODE')
