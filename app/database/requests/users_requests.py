@@ -20,7 +20,7 @@ async def get_user_by_tg_id(tg_id: BigInteger) -> User | None:
       user = await session.scalar(select(User).where(User.id == tg_id))
       return user
 
-async def create_user(tg_id: BigInteger, firstName: str, lastName: str, secondName: str) -> User | None:
+async def create_user(tg_id: BigInteger, firstName: str, lastName: str) -> User | None:
    async with async_session() as session:
       user = await session.scalar(select(User).where(User.id == tg_id))
 
@@ -29,7 +29,6 @@ async def create_user(tg_id: BigInteger, firstName: str, lastName: str, secondNa
             id=tg_id,
             first_name=firstName,
             last_name=lastName,
-            second_name=secondName,
          )
          session.add(user)
 

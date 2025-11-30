@@ -67,12 +67,12 @@ async def send_task_message(message: Message, task: Task):
       )
         
       await message.answer(textwrap.dedent(f'''
-         1️⃣ Задание 1/3: Правда или Ложь
+         1️⃣ Задание 1/3: <b>Новый год в разных странах</b>. Правда vs Ложь
                                            
          {task.description}
 
          Выберите правильный ответ:
-      '''), reply_markup=keyboard)
+      '''), parse_mode='HTML', reply_markup=keyboard)
         
    elif task.type == 'AI':
       try:
@@ -83,7 +83,9 @@ async def send_task_message(message: Message, task: Task):
          file = FSInputFile(f'public/ai_images/photo_ai_image_{date_str}.jpg')
          
          await message.answer_photo(photo=file, caption=textwrap.dedent(f'''
-            2️⃣ Задание 2/3: Напишите название новогоднего фильма/мультфильма, к которому представлена эта ИИ-афиша. Пишите ответ без кавычек и с большой буквы. 
+            2️⃣ Задание 2/3: <b>Напишите название новогоднего фильма/мультфильма</b>, к которому представлена эта ИИ-афиша. 
+                                                                        
+            Пишите ответ без кавычек и с большой буквы. 
             Например: Кислород.
                                                                         
             ✨ Название пишем полностью, как в оригинальном названии фильма;
@@ -95,7 +97,7 @@ async def send_task_message(message: Message, task: Task):
             ❌ Чебурашка 2
             
             🎬 Напишите название фильма в ответном сообщении.
-         '''))
+         '''), parse_mode='HTML')
       except:
          await message.answer('Ой, задание 2️⃣ затерялось... Обратись к Деду Морозу!')
         
@@ -108,11 +110,12 @@ async def send_task_message(message: Message, task: Task):
          description_part = f"\nОписание: {task.description}\n" if task.description else ""
 
          await message.answer_photo(photo=file, caption=
-            f'3️⃣ Задание 3/3: Угадай салат\n'
+            f'3️⃣ Задание 3/3: <b>Угадай название салата на праздничный стол</b> 🥗\n'
             f'{description_part}\n'
             f'✨ Если вы не знаете, что это за салат, придумайте ему своё оригинальное название\n'
-            f'✨ Баллы за это задание начисляются всем! Креативьте друзья, давайте посмеёмся 🥗'
-         )
+            f'✨ Баллы за это задание начисляются всем!\n' 
+            f'✨ Креативьте друзья, давайте посмеёмся 🤗',
+         parse_mode='HTML')
       except:
          await message.answer('Ой, задание 3️⃣ затерялось... Обратись к Деду Морозу!')
 
@@ -132,7 +135,7 @@ async def handle_tf_answer(callback: CallbackQuery):
    is_correct = (answer == task.correct_answer)
    points = task.score if is_correct else 0
     
-   success = await mark_task_completed(user_id, task_id, points)
+   success = await mark_task_completed(user_id, task_id, points, answer)
     
    if success and points > 0:
       await update_user_score(user_id, points)
@@ -184,7 +187,7 @@ async def handle_text_answer(message: Message):
       points = task.score
       result_text = f"✅ Хм... Интересное название для салата. Ответ принят! Было зачислено +{points} баллов"
 
-   success = await mark_task_completed(user_id, task.id, points)
+   success = await mark_task_completed(user_id, task.id, points, user_answer)
    
    if success and points > 0:
       await update_user_score(user_id, points)

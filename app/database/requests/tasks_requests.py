@@ -68,7 +68,7 @@ async def get_task_by_id(task_id: int) -> Task | None:
     async with async_session() as session:
         return await session.scalar(select(Task).where(Task.id == task_id))
 
-async def mark_task_completed(user_id: int, task_id: int, awarded_points: int) -> bool:
+async def mark_task_completed(user_id: int, task_id: int, awarded_points: int, user_answer: str) -> bool:
     """Mark task as completed. Returns True if successful, False if already completed."""
     async with async_session() as session:
         # Check if already completed
@@ -86,6 +86,7 @@ async def mark_task_completed(user_id: int, task_id: int, awarded_points: int) -
             user_id=user_id,
             task_id=task_id,
             awarded_points=awarded_points,
+            user_answer=user_answer,
             timestamp=datetime.utcnow()
         )
         session.add(completion)

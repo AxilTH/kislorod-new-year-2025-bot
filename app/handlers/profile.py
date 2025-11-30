@@ -29,7 +29,7 @@ async def handler_profile(message: Message):
    text = textwrap.dedent(f'''
       <b>🎅 Ваш новогодний профиль:</b>
                           
-      👤 {user.first_name} {user.last_name} {user.second_name}
+      👤 {user.first_name} {user.last_name}
       📊 Статус: Боец 🧤
 
       💰 Волшебных снежинок собрано: {user.score}

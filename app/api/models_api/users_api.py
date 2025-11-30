@@ -13,20 +13,17 @@ class UserCreate(BaseModel):
     id: int
     first_name: str
     last_name: str
-    second_name: str
     score: int
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    second_name: Optional[str] = None
     score: Optional[int] = None
 
 class UserOut(BaseModel):
     id: int
     first_name: str
     last_name: str
-    second_name: str
     score: int
 
     model_config = ConfigDict(from_attributes=True)
@@ -54,7 +51,6 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_s
         id=payload.id,
         first_name=payload.first_name,
         last_name=payload.last_name,
-        second_name=payload.second_name,
         score=payload.score,
     )
     session.add(user)

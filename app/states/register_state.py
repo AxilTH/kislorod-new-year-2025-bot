@@ -4,4 +4,3 @@ class registerState(StatesGroup):
    registerCode = State()
    firstName = State()
    lastName = State()
-   secondName = State()

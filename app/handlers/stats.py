@@ -39,7 +39,7 @@ async def handler_stats(message: Message):
    top_lines = []
    for i, user in enumerate(sorted_users):
       # Формируем полное имя
-      full_name = f"{user.first_name} {user.last_name} {user.second_name}".strip()
+      full_name = f"{user.first_name} {user.last_name}".strip()
       
       # Добавляем эмодзи для первых трех мест, для остальных - номер
       if i in medals:

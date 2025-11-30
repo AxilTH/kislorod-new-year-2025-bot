@@ -45,7 +45,6 @@ class User(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     first_name: Mapped[str] = mapped_column(String(32), nullable=False)
     last_name: Mapped[str] = mapped_column(String(32), nullable=False)
-    second_name: Mapped[str] = mapped_column(String(32), nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     events = relationship("UserEvent", back_populates="user", cascade="all, delete-orphan")
@@ -100,6 +99,7 @@ class TaskCompletion(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     task_id: Mapped[int] = mapped_column(ForeignKey('tasks.id'), nullable=False)
     awarded_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    user_answer: Mapped[str] = mapped_column(String(256), nullable=False)
     timestamp: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="task_completions")
