@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
-from config import TOKEN
+from config import TOKEN, set_timezone
 from app.handlers import router
 from app.database.models import async_main
 
@@ -18,6 +18,7 @@ COMMANDS = [
 
 async def main():
    await async_main() 
+   set_timezone()
    bot = Bot(token=TOKEN)
    dp = Dispatcher()
    dp.include_router(router)

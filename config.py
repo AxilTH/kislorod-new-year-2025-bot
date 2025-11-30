@@ -1,5 +1,9 @@
-import os
+import os, time, pytz
 from pathlib import Path
+
+def set_timezone():
+    os.environ['TZ'] = 'Europe/Moscow'  # Замените на ваш часовой пояс
+    time.tzset()
 
 # Try to load variables from a .env file if python-dotenv is installed.
 # This import is optional: if python-dotenv is not available we still

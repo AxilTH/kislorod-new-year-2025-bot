@@ -5,31 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_
 
 from config import DEFAULT_DB_URL, TARGET_DB_URL
 
-async def create_database_if_not_exists():
-    try:
-        # Подключаемся к стандартной базе postgres
-        temp_engine = create_async_engine(DEFAULT_DB_URL, isolation_level="AUTOCOMMIT")
-        
-        async with temp_engine.connect() as conn:
-            # Проверяем существование базы данных
-            result = await conn.execute(
-               text("SELECT 1 FROM pg_database WHERE datname = 'kislorod-new-year-2025-bot'")
-            )
-            database_exists = result.scalar() is not None
-            
-            if not database_exists:
-                print("Создаю базу данных 'kislorod-new-year-2025-bot'...")
-                await conn.execute(text("CREATE DATABASE \"kislorod-new-year-2025-bot\""))
-                print("База данных успешно создана!")
-            else:
-                print("База данных уже существует.")
-        
-        await temp_engine.dispose()
-        
-    except Exception as e:
-        print(f"Ошибка при создании базы данных: {e}")
-        raise
-
 engine = create_async_engine(url=TARGET_DB_URL)
 # Do not expire attributes on commit to avoid lazy-loading after commit
 async_session = async_sessionmaker(engine, expire_on_commit=False)
@@ -106,7 +81,5 @@ class TaskCompletion(Base):
     task = relationship("Task", back_populates="completions")
 
 async def async_main():
-   await create_database_if_not_exists()
-
    async with engine.begin() as conn:
       await conn.run_sync(Base.metadata.create_all)
