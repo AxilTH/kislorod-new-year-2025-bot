@@ -1,9 +1,55 @@
+import logging
+
 from sqlalchemy import Integer, BigInteger, String, DateTime, Date
 from sqlalchemy import Column, Enum, ForeignKey, UniqueConstraint, func, text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from config import DEFAULT_DB_URL, TARGET_DB_URL
+
+logger = logging.getLogger(__name__)
+
+def _get_admin_db_url() -> str:
+    """
+    Return a connection string that points to an existing database
+    (usually the default `postgres`) so we can create the target DB
+    if it is missing. Falls back to TARGET_DB_URL with the database
+    name swapped to `postgres` when DEFAULT_DB_URL is not provided.
+    """
+    if DEFAULT_DB_URL:
+        return DEFAULT_DB_URL
+
+    target_url = make_url(TARGET_DB_URL)
+    if not target_url.database:
+        raise RuntimeError("TARGET_DB_URL must include database name")
+
+    admin_url = target_url.set(database="postgres")
+    return admin_url.render_as_string(hide_password=False)
+
+async def create_database_if_not_exists() -> None:
+    """
+    Ensure the database referenced in TARGET_DB_URL exists.
+    This keeps docker/remote deployments idempotent even when
+    the user forgets to pre-create the DB.
+    """
+    admin_url = _get_admin_db_url()
+    target_url = make_url(TARGET_DB_URL)
+    db_name = target_url.database
+
+    temp_engine = create_async_engine(admin_url, isolation_level="AUTOCOMMIT")
+    try:
+        async with temp_engine.connect() as conn:
+            exists = await conn.scalar(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                {"name": db_name},
+            )
+            if not exists:
+                logger.info("Database %s not found, creating...", db_name)
+                await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
+                logger.info("Database %s created", db_name)
+    finally:
+        await temp_engine.dispose()
 
 engine = create_async_engine(url=TARGET_DB_URL)
 # Do not expire attributes on commit to avoid lazy-loading after commit
@@ -81,5 +127,7 @@ class TaskCompletion(Base):
     task = relationship("Task", back_populates="completions")
 
 async def async_main():
+   await create_database_if_not_exists()
+
    async with engine.begin() as conn:
       await conn.run_sync(Base.metadata.create_all)
