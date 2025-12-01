@@ -33,10 +33,17 @@ async def create_database_if_not_exists() -> None:
     This keeps docker/remote deployments idempotent even when
     the user forgets to pre-create the DB.
     """
+    if not TARGET_DB_URL:
+        raise RuntimeError("TARGET_DB_URL is not set")
+    
     admin_url = _get_admin_db_url()
     target_url = make_url(TARGET_DB_URL)
     db_name = target_url.database
 
+    if not db_name:
+        raise RuntimeError("TARGET_DB_URL must include database name")
+
+    logger.info("Checking if database '%s' exists...", db_name)
     temp_engine = create_async_engine(admin_url, isolation_level="AUTOCOMMIT")
     try:
         async with temp_engine.connect() as conn:
@@ -45,9 +52,14 @@ async def create_database_if_not_exists() -> None:
                 {"name": db_name},
             )
             if not exists:
-                logger.info("Database %s not found, creating...", db_name)
+                logger.warning("Database '%s' not found, creating...", db_name)
                 await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
-                logger.info("Database %s created", db_name)
+                logger.info("Database '%s' created successfully", db_name)
+            else:
+                logger.info("Database '%s' already exists", db_name)
+    except Exception as e:
+        logger.error("Failed to create database '%s': %s", db_name, e, exc_info=True)
+        raise
     finally:
         await temp_engine.dispose()
 
@@ -127,7 +139,17 @@ class TaskCompletion(Base):
     task = relationship("Task", back_populates="completions")
 
 async def async_main():
-   await create_database_if_not_exists()
+   try:
+      await create_database_if_not_exists()
+   except Exception as e:
+      logger.error("Failed to ensure database exists: %s", e, exc_info=True)
+      raise
 
-   async with engine.begin() as conn:
-      await conn.run_sync(Base.metadata.create_all)
+   try:
+      logger.info("Creating database tables...")
+      async with engine.begin() as conn:
+         await conn.run_sync(Base.metadata.create_all)
+      logger.info("Database tables created successfully")
+   except Exception as e:
+      logger.error("Failed to create database tables: %s", e, exc_info=True)
+      raise

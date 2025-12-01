@@ -1,9 +1,21 @@
 import asyncio
+import logging
+import sys
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from config import TOKEN, set_timezone
 from app.handlers import router
 from app.database.models import async_main
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 COMMANDS = [
    BotCommand(command="/start", description="Начать регистрацию в боте"),
@@ -17,16 +29,32 @@ COMMANDS = [
 ]
 
 async def main():
-   await async_main() 
+   try:
+      logger.info("Initializing database...")
+      await async_main()
+      logger.info("Database initialized successfully")
+   except Exception as e:
+      logger.critical("Failed to initialize database: %s", e, exc_info=True)
+      sys.exit(1)
+   
    set_timezone()
+   
+   if not TOKEN:
+      logger.critical("TOKEN is not set!")
+      sys.exit(1)
+   
    bot = Bot(token=TOKEN)
    dp = Dispatcher()
    dp.include_router(router)
    await bot.set_my_commands(COMMANDS)
+   logger.info("Bot started successfully")
    await dp.start_polling(bot)
 
 if __name__ == '__main__':
    try:
       asyncio.run(main())
    except KeyboardInterrupt:
-      print('Exit')
+      logger.info('Bot stopped by user')
+   except Exception as e:
+      logger.critical("Fatal error: %s", e, exc_info=True)
+      sys.exit(1)
