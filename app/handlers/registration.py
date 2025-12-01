@@ -16,7 +16,13 @@ router = Router()
 
 @router.message(CommandStart())
 async def handler_start(message: Message, state: FSMContext):
-   is_user_registered = await db_requests.is_user_registered(message.from_user.id)
+   try:
+      is_user_registered = await db_requests.is_user_registered(message.from_user.id)
+   except Exception as e:
+      import logging
+      logging.getLogger(__name__).error("Database error in start handler: %s", e, exc_info=True)
+      await message.answer("❌ Произошла ошибка при обращении к базе данных. Попробуйте позже.")
+      return
 
    # Если пользователь зарегистрирован
    if is_user_registered:

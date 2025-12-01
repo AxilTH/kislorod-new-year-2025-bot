@@ -48,7 +48,15 @@ async def main():
    dp.include_router(router)
    await bot.set_my_commands(COMMANDS)
    logger.info("Bot started successfully")
-   await dp.start_polling(bot)
+   
+   try:
+      await dp.start_polling(bot)
+   finally:
+      # Закрытие соединений с БД при остановке бота
+      from app.database.models import engine
+      logger.info("Closing database connections...")
+      await engine.dispose()
+      logger.info("Database connections closed")
 
 if __name__ == '__main__':
    try:

@@ -10,7 +10,13 @@ router = Router()
 
 @router.message(Command('profile'))
 async def handler_profile(message: Message):
-   is_user_registered = await db_requests.is_user_registered(message.from_user.id)
+   try:
+      is_user_registered = await db_requests.is_user_registered(message.from_user.id)
+   except Exception as e:
+      import logging
+      logging.getLogger(__name__).error("Database error in profile handler: %s", e, exc_info=True)
+      await message.answer("❌ Произошла ошибка при обращении к базе данных. Попробуйте позже.")
+      return
 
    if not is_user_registered:
       text = textwrap.dedent(

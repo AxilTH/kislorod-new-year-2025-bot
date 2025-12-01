@@ -30,8 +30,10 @@ def _get_admin_db_url() -> str:
 async def create_database_if_not_exists() -> None:
     """
     Ensure the database referenced in TARGET_DB_URL exists.
-    This keeps docker/remote deployments idempotent even when
-    the user forgets to pre-create the DB.
+    
+    NOTE: PostgreSQL container automatically creates the database from POSTGRES_DB
+    on first initialization. This function is a safety net in case the database
+    was manually deleted after initialization.
     """
     if not TARGET_DB_URL:
         raise RuntimeError("TARGET_DB_URL is not set")
@@ -52,18 +54,26 @@ async def create_database_if_not_exists() -> None:
                 {"name": db_name},
             )
             if not exists:
-                logger.warning("Database '%s' not found, creating...", db_name)
+                logger.warning("Database '%s' not found (should be auto-created by PostgreSQL), creating...", db_name)
                 await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
                 logger.info("Database '%s' created successfully", db_name)
             else:
-                logger.info("Database '%s' already exists", db_name)
+                logger.debug("Database '%s' already exists", db_name)
     except Exception as e:
         logger.error("Failed to create database '%s': %s", db_name, e, exc_info=True)
         raise
     finally:
         await temp_engine.dispose()
 
-engine = create_async_engine(url=TARGET_DB_URL)
+# Настройки пула соединений для предотвращения переполнения и утечек
+engine = create_async_engine(
+    url=TARGET_DB_URL,
+    pool_size=10,              # Базовый размер пула
+    max_overflow=20,            # Максимальное количество дополнительных соединений
+    pool_pre_ping=True,        # Проверка соединений перед использованием (автоматическое переподключение)
+    pool_recycle=3600,          # Переподключение каждые 60 минут (предотвращение таймаутов)
+    echo=False,                 # Логирование SQL запросов (отключено для продакшена)
+)
 # Do not expire attributes on commit to avoid lazy-loading after commit
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -139,7 +149,15 @@ class TaskCompletion(Base):
     task = relationship("Task", back_populates="completions")
 
 async def async_main():
+   """
+   Initialize database tables.
+   
+   NOTE: The database itself is automatically created by PostgreSQL container
+   from POSTGRES_DB environment variable on first initialization.
+   This function only creates the application tables.
+   """
    try:
+      # Safety check: ensure database exists (usually already created by PostgreSQL)
       await create_database_if_not_exists()
    except Exception as e:
       logger.error("Failed to ensure database exists: %s", e, exc_info=True)
