@@ -90,7 +90,7 @@ async def handler_register_last_name(message: Message, state: FSMContext):
    await state.update_data(firstName=message.text)
    await state.set_state(registerState.registerState.lastName)
 
-   text = 'Теперь напиши свою <b>фамилию</b>!'
+   text = 'Теперь напиши свою <b>фамилию</b>:'
 
    await message.answer(text, parse_mode='HTML')
 
