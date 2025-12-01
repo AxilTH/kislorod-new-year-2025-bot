@@ -14,6 +14,12 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kislorod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
 
   api:
     build: .
@@ -30,7 +36,8 @@ services:
       # construct TARGET_DB_URL pointing at postgres service
       TARGET_DB_URL: "postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-kislorod}"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
@@ -54,7 +61,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-kislorod}
       TARGET_DB_URL: "postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-kislorod}"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./:/app
     command: ["python", "run.py"]
