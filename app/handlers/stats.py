@@ -25,8 +25,9 @@ async def handler_stats(message: Message):
       await message.answer(text)
       return
    
-   users = (await db_requests.get_all_users())[:10]
+   users = (await db_requests.get_all_users())
    sorted_users = sorted(users, key=lambda user: user.score, reverse=True)
+   top_users = sorted_users[:10]
 
    # Определяем эмодзи для первых трех мест
    medals = {
@@ -37,7 +38,7 @@ async def handler_stats(message: Message):
 
    # Формируем текст топа
    top_lines = []
-   for i, user in enumerate(sorted_users):
+   for i, user in enumerate(top_users):
       # Формируем полное имя
       full_name = f"{user.first_name} {user.last_name}".strip()
       
