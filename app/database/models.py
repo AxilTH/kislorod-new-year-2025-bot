@@ -5,65 +5,9 @@ from sqlalchemy import Column, Enum, ForeignKey, UniqueConstraint, func, text
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
 from config import DEFAULT_DB_URL, TARGET_DB_URL
 
 logger = logging.getLogger(__name__)
-
-def _get_admin_db_url() -> str:
-    """
-    Return a connection string that points to an existing database
-    (usually the default `postgres`) so we can create the target DB
-    if it is missing. Falls back to TARGET_DB_URL with the database
-    name swapped to `postgres` when DEFAULT_DB_URL is not provided.
-    """
-    if DEFAULT_DB_URL:
-        return DEFAULT_DB_URL
-
-    target_url = make_url(TARGET_DB_URL)
-    if not target_url.database:
-        raise RuntimeError("TARGET_DB_URL must include database name")
-
-    admin_url = target_url.set(database="postgres")
-    return admin_url.render_as_string(hide_password=False)
-
-async def create_database_if_not_exists() -> None:
-    """
-    Ensure the database referenced in TARGET_DB_URL exists.
-    
-    NOTE: PostgreSQL container automatically creates the database from POSTGRES_DB
-    on first initialization. This function is a safety net in case the database
-    was manually deleted after initialization.
-    """
-    if not TARGET_DB_URL:
-        raise RuntimeError("TARGET_DB_URL is not set")
-    
-    admin_url = _get_admin_db_url()
-    target_url = make_url(TARGET_DB_URL)
-    db_name = target_url.database
-
-    if not db_name:
-        raise RuntimeError("TARGET_DB_URL must include database name")
-
-    logger.info("Checking if database '%s' exists...", db_name)
-    temp_engine = create_async_engine(admin_url, isolation_level="AUTOCOMMIT")
-    try:
-        async with temp_engine.connect() as conn:
-            exists = await conn.scalar(
-                text("SELECT 1 FROM pg_database WHERE datname = :name"),
-                {"name": db_name},
-            )
-            if not exists:
-                logger.warning("Database '%s' not found (should be auto-created by PostgreSQL), creating...", db_name)
-                await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
-                logger.info("Database '%s' created successfully", db_name)
-            else:
-                logger.debug("Database '%s' already exists", db_name)
-    except Exception as e:
-        logger.error("Failed to create database '%s': %s", db_name, e, exc_info=True)
-        raise
-    finally:
-        await temp_engine.dispose()
 
 # Настройки пула соединений для предотвращения переполнения и утечек
 engine = create_async_engine(
@@ -149,12 +93,6 @@ class TaskCompletion(Base):
     task = relationship("Task", back_populates="completions")
 
 async def async_main():
-   try:
-      await create_database_if_not_exists()
-   except Exception as e:
-      logger.error("Failed to ensure database exists: %s", e, exc_info=True)
-      raise
-
    try:
       logger.info("Creating database tables...")
       async with engine.begin() as conn:
