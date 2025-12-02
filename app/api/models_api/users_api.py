@@ -28,13 +28,13 @@ class UserOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-@router.get("", response_model=List[UserOut])
+@router.get("", response_model=List[UserOut], dependencies=[Depends(admin_auth)])
 async def get_all_users(session: AsyncSession = Depends(get_session)):
    q = select(User)
    res = await session.execute(q)
    return res.scalars().all()
 
-@router.get("/{user_id}", response_model=UserOut)
+@router.get("/{user_id}", response_model=UserOut, dependencies=[Depends(admin_auth)])
 async def get_user(user_id: int, session: AsyncSession = Depends(get_session)):
     # `id` in model is Telegram id (primary key)
     user = await session.scalar(select(User).where(User.id == user_id))
