@@ -62,7 +62,7 @@ async def handler_stats(message: Message):
    top_text = "\n".join(top_lines)
 
    # Собираем итоговый текст без лишних отступов
-   header = "🏆 ТОП-10 УЧАСТНИКОВ\n\n"
+   header = "🏆 ТОП УЧАСТНИКОВ\n\n"
    text = f"{header}{top_text}"
 
    await message.answer(text, parse_mode='HTML')
