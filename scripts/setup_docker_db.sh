@@ -32,5 +32,3 @@ cd "$PROJECT_ROOT"
 /usr/bin/docker compose up -d postgres
 
 echo "Postgres should be running. Check 'docker ps' for container status."
-
-echo "If you used the example .env, connect with:\n  postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/kislorod"

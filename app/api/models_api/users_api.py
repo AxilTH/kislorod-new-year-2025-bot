@@ -57,6 +57,7 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_s
     await session.commit()
     await session.refresh(user)
     return user
+
 @router.put("/{user_id}", response_model=UserOut, dependencies=[Depends(admin_auth)])
 async def update_user(user_id: int, payload: UserUpdate, session: AsyncSession = Depends(get_session)):
     user = await session.scalar(select(User).where(User.id == user_id))

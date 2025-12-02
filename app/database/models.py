@@ -149,15 +149,7 @@ class TaskCompletion(Base):
     task = relationship("Task", back_populates="completions")
 
 async def async_main():
-   """
-   Initialize database tables.
-   
-   NOTE: The database itself is automatically created by PostgreSQL container
-   from POSTGRES_DB environment variable on first initialization.
-   This function only creates the application tables.
-   """
    try:
-      # Safety check: ensure database exists (usually already created by PostgreSQL)
       await create_database_if_not_exists()
    except Exception as e:
       logger.error("Failed to ensure database exists: %s", e, exc_info=True)

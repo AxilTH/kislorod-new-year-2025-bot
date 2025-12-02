@@ -15,20 +15,12 @@ app.include_router(tasks_api.router)
 
 @app.on_event("startup")
 async def on_startup():
-    """
-    Проверка доступности БД при старте API.
-    Инициализация БД (создание базы/таблиц) выполняется только в bot (run.py),
-    чтобы избежать конфликтов при одновременном запуске.
-    """
     try:
-        # Простая проверка доступности БД
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         logger.info("Database connection verified for API")
     except Exception as e:
         logger.error("Failed to connect to database: %s", e, exc_info=True)
-        # Не падаем, так как bot может еще не создать таблицы
-        # API будет работать, когда таблицы будут созданы
 
 @app.on_event("shutdown")
 async def on_shutdown():
